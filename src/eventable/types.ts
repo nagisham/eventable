@@ -1,5 +1,9 @@
 import { Lambda } from "@nagisham/standard";
 
+export type HandlersState<STATE, API = void> = {
+	[TYPE in keyof STATE]: Array<(args: STATE[TYPE], api: API) => void>;
+};
+
 export type Type = string | number | symbol;
 
 export type empty = void | undefined | null;

@@ -1,15 +1,17 @@
-import { Lambda } from "@nagisham/standard";
+import { Lambda, Provider } from "@nagisham/standard";
 
-import { handlers_state } from "./states";
-import { StateProvider } from "./states/providers/types";
-import { HandlersState } from "./states/types";
-
-import { Cleanup, RegisterOptions, RegisterTypelessOptions, Type, empty } from "./types";
+import {
+	Cleanup,
+	HandlersState,
+	RegisterOptions,
+	RegisterTypelessOptions,
+	Type,
+	empty,
+} from "./types";
 
 interface EngineConstructor {
 	<STATE, API, RETURNS extends { [KEY in keyof STATE]: any }, PARAMS extends any[]>(options: {
-		type?: Type;
-		state_provider: StateProvider<HandlersState<STATE, API>>;
+		provider: Provider<HandlersState<STATE, API>>;
 		runner: <TYPE extends keyof STATE>(
 			handlers: Array<(args1: STATE[TYPE], api: API) => void>,
 			...params: PARAMS
@@ -30,13 +32,29 @@ interface EngineConstructor {
 		TYPE extends keyof STATE = STATE extends Record<infer T, any> ? T : never,
 		ARGS = STATE extends Record<Type, infer A> ? A : never,
 	>(options: {
-		type?: TYPE;
-		state_provider: StateProvider<HandlersState<STATE, API>>;
+		provider: Provider<HandlersState<STATE, API>>;
 		runner: (handlers: Array<(args: ARGS, api: API) => void>, ...params: PARAMS) => RETURN;
 		event: (params: PARAMS) => readonly [type: TYPE, ...params: PARAMS];
 	}): {
 		emit: (...params: PARAMS) => RETURN;
 		register: <SELECTED = ARGS>(options: RegisterTypelessOptions<API, ARGS, SELECTED>) => Cleanup;
+	};
+}
+
+function handlers_state<STATE, API>(provider: Provider<HandlersState<STATE, API>>) {
+	const default_type = Symbol();
+
+	return {
+		get: <TYPE extends keyof STATE>(type: TYPE | undefined) =>
+			(provider.get()[(type ?? default_type) as TYPE] ??= []),
+		set: <TYPE extends keyof STATE>(
+			type: TYPE | undefined,
+			handlers: Array<(args: STATE[TYPE], api: any) => void>,
+		) => {
+			const state = provider.get();
+			state[(type ?? default_type) as TYPE] = handlers;
+			provider.set(state);
+		},
 	};
 }
 
@@ -47,8 +65,7 @@ export const eventable: EngineConstructor = <
 	PARAMS extends any[],
 	TYPE extends keyof STATE = STATE extends Record<infer T, any> ? T : never,
 >(options: {
-	type?: TYPE;
-	state_provider: StateProvider<HandlersState<STATE, API>>;
+	provider: Provider<HandlersState<STATE, API>>;
 	runner: <TYPE extends keyof STATE>(
 		handlers: Array<(args1: STATE[TYPE], api: API) => void>,
 		...params: PARAMS
@@ -56,14 +73,15 @@ export const eventable: EngineConstructor = <
 	event?: (params: PARAMS) => readonly [type: TYPE, ...params: PARAMS];
 }) => {
 	const { runner, event } = options;
-	const { get, set } = handlers_state<STATE, API>(options.type, options.state_provider);
+	const { get, set } = handlers_state(options.provider);
 
 	function emit(...params: PARAMS | [type: TYPE, ...params: PARAMS]) {
 		const [type, ...args] = event
 			? event(params as PARAMS)
 			: (params as [type: TYPE, ...params: PARAMS]);
 
-		return runner(get(type), ...args);
+		const handlers = get(type);
+		return runner(handlers, ...args);
 	}
 
 	function register<TYPE extends keyof STATE, SELECTED>(
@@ -85,6 +103,11 @@ export const eventable: EngineConstructor = <
 			handle = handler.handle as Lambda<[args: SELECTED | void, api?: API], void>;
 		}
 
+		Object.defineProperty(listener, "name", { value: name });
+
+		let handlers = get(type);
+		if (!handlers) set(type, (handlers = []));
+
 		function listener(args: SELECTED | void, api?: API) {
 			if (select) {
 				args &&= select(args);
@@ -105,6 +128,8 @@ export const eventable: EngineConstructor = <
 		}
 
 		function clear() {
+			if (!handlers) return;
+
 			const index = handlers.indexOf(listener);
 			if (index === -1) {
 				console.warn("event engine: registered listener not found");
@@ -113,11 +138,6 @@ export const eventable: EngineConstructor = <
 
 			handlers.splice(index, 1);
 		}
-
-		Object.defineProperty(listener, "name", { value: name });
-
-		let handlers = get(type);
-		if (!handlers) set(type, (handlers = []));
 
 		switch (patch?.mode) {
 			case "prepend": {

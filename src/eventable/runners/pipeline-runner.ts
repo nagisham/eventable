@@ -2,7 +2,7 @@ import {
 	forward_args_as_return,
 	forward_params_as_args,
 	run_handler_midleware,
-} from "./option-defaults";
+} from "./runner-option-defaults";
 
 export interface PipelineApi {
 	readonly aborted: boolean;
@@ -16,7 +16,7 @@ function pipeline_api(): PipelineApi {
 		get aborted() {
 			return aborted;
 		},
-		abort() {
+		abort: () => {
 			aborted = true;
 		},
 	};

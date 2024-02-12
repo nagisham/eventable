@@ -2,10 +2,6 @@
   "name": "@nagisham/eventable",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "keywords": [
-    "events"
-  ],
   "author": "Evgeniy Nage Nikulin (https://github.com/at-nage)",
   "homepage": "https://github.com/nagisham/eventable",
   "repository": {
@@ -13,17 +9,15 @@
     "url": "git+https://github.com/nagisham/eventable.git"
   },
   "license": "MIT",
-  "main": "./dist/main.cjs.js",
-  "module": "./dist/main.es.js",
-  "typings": "./dist/main.d.ts",
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
   "devDependencies": {
+    "terser": "^5.27.0",
+    "tsup": "^8.0.1",
     "typescript": "^5.3.3",
-    "vite": "^5.0.12",
     "vitest": "^1.2.2"
   },
   "dependencies": {

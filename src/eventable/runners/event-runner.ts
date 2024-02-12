@@ -1,4 +1,4 @@
-import { forward_params_as_args, run_handler_midleware } from "./option-defaults";
+import { forward_params_as_args, run_handler_midleware } from "./runner-option-defaults";
 
 interface EventRunnerOptions<STATE, PARAMS extends any[] = []> {
 	request?: (<TYPE extends keyof STATE>(...params: PARAMS) => STATE[TYPE]) | undefined;

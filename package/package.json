@@ -4,7 +4,10 @@
   "type": "module",
   "description": "",
   "keywords": [
-    "events"
+    "eventable",
+    "events",
+    "emiter",
+    "pipeline"
   ],
   "author": "Evgeniy Nage Nikulin (https://github.com/at-nage)",
   "homepage": "https://github.com/nagisham/eventable",
@@ -13,9 +16,12 @@
     "url": "git+https://github.com/nagisham/eventable.git"
   },
   "license": "MIT",
-  "main": "eventable/index.js",
-  "types": "eventable/index.d.ts",
-  "files": [ "eventable" ],
+  "exports": {
+    ".": {
+      "main": "./eventable/index.js",
+      "types": "./eventable/index.d.ts"
+    }
+  },
   "scripts": {
     "push": "npm publish --access=public"
   },

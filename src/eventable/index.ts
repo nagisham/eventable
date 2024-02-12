@@ -1,1 +1,1 @@
-export { eventable } from "./eventable";
+export { eventable } from './eventable';
