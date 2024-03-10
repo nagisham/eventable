@@ -23,6 +23,7 @@
     }
   },
   "scripts": {
+    "link": "npm link",
     "push": "npm publish --access=public"
   },
   "dependencies": {

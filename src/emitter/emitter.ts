@@ -4,7 +4,7 @@ import { eventable } from "src/eventable";
 import { event_runner } from "src/eventable/runners";
 import { Cleanup, HandlersState, RegisterOptions, empty } from "src/eventable/types";
 
-export type Emiter<EVENTS = any> = {
+export type Emitter<EVENTS = any> = {
 	emit: <TYPE extends keyof EVENTS>(
 		...params: EVENTS[TYPE] extends empty ? [type: TYPE] : [type: TYPE, args: EVENTS[TYPE]]
 	) => void;
@@ -13,7 +13,7 @@ export type Emiter<EVENTS = any> = {
 	) => Cleanup;
 };
 
-export function emiter<EVENTS>(): Emiter<EVENTS> {
+export function emitter<EVENTS>(): Emitter<EVENTS> {
 	return eventable({
 		provider: in_memory_provider(<HandlersState<EVENTS>>{}),
 		runner: event_runner(),
