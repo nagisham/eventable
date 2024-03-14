@@ -1,7 +1,7 @@
 import {
 	forward_args_as_return,
 	forward_params_as_args,
-	run_handler_midleware,
+	run_handler_middleware,
 } from "./runner-option-defaults";
 
 export interface PipelineApi {
@@ -30,7 +30,7 @@ interface PipelineRunnerOptions<
 > {
 	request?: (<TYPE extends keyof STATE>(...params: PARAMS) => STATE[TYPE]) | undefined;
 	response?: (<TYPE extends keyof STATE>(args: STATE[TYPE]) => RETURNS[TYPE]) | undefined;
-	midleware?:
+	middleware?:
 		| (<TYPE extends keyof STATE>(
 				handler: (args: STATE[TYPE], API: API) => void,
 				arg: STATE[TYPE],
@@ -44,11 +44,11 @@ export function pipeline_runner<
 	PARAMS extends any[],
 	RETURNS extends { [KEY in keyof STATE]: any } = STATE,
 >(options?: PipelineRunnerOptions<STATE, PipelineApi, RETURNS, PARAMS>) {
-	const { request, response, midleware } = Object.assign(
+	const { request, response, middleware } = Object.assign(
 		{
 			request: forward_params_as_args,
 			response: forward_args_as_return,
-			midleware: run_handler_midleware,
+			middleware: run_handler_middleware,
 		},
 		options,
 	);
@@ -62,7 +62,7 @@ export function pipeline_runner<
 
 		for (const handler of handlers) {
 			if (api.aborted) break;
-			midleware(handler, args, api);
+			middleware(handler, args, api);
 		}
 
 		return response<TYPE>(args);

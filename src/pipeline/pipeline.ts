@@ -8,7 +8,7 @@ import { PipelineOptions } from "./types";
 
 export interface Pipeline<ARGS = any, PARAMS extends any[] = [args: ARGS], RETURN = ARGS> {
 	emit: (...params: PARAMS) => RETURN;
-	register: <SELECTED = ARGS>(
+	listen: <SELECTED = ARGS>(
 		options: RegisterTypelessOptions<PipelineApi, ARGS, SELECTED>,
 	) => Cleanup;
 }
@@ -16,7 +16,7 @@ export interface Pipeline<ARGS = any, PARAMS extends any[] = [args: ARGS], RETUR
 export const pipeline = <ARGS, PARAMS extends any[] = [args: ARGS], RETURN = ARGS>(
 	options?: PipelineOptions<ARGS, PARAMS, RETURN>,
 ): Pipeline<ARGS, PARAMS, RETURN> => {
-	const { request, response, midleware, handlers } = options ?? {};
+	const { request, response, middleware, handlers } = options ?? {};
 	const type = Symbol();
 
 	type STATE = Record<typeof type, ARGS>;
@@ -27,7 +27,7 @@ export const pipeline = <ARGS, PARAMS extends any[] = [args: ARGS], RETURN = ARG
 		runner: pipeline_runner<STATE, PARAMS, RETURNS>({
 			request,
 			response,
-			midleware,
+			middleware,
 		}),
 		event: (params: PARAMS) => <const>[type, ...params],
 	});

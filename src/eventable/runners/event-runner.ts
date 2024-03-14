@@ -1,4 +1,4 @@
-import { forward_params_as_args, run_handler_midleware } from "./runner-option-defaults";
+import { forward_params_as_args, run_handler_middleware } from "./runner-option-defaults";
 
 interface EventRunnerOptions<STATE, PARAMS extends any[] = []> {
 	request?: (<TYPE extends keyof STATE>(...params: PARAMS) => STATE[TYPE]) | undefined;
@@ -13,7 +13,7 @@ export function event_runner<STATE, PARAMS extends any[]>(
 	const { request, midleware } = Object.assign(
 		{
 			request: forward_params_as_args,
-			midleware: run_handler_midleware,
+			midleware: run_handler_middleware,
 		},
 		options,
 	);

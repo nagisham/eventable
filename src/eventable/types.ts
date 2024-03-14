@@ -6,6 +6,8 @@ export type HandlersState<STATE, API = void> = {
 
 export type Type = string | number | symbol;
 
+export type Events = Record<Type, any>;
+
 export type empty = void | undefined | null;
 
 export type Cleanup = () => void;

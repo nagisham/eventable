@@ -1,19 +1,22 @@
 import { in_memory_provider } from "@nagisham/standard";
 
 import { eventable } from "src/eventable";
+import { Listening } from "src/eventable/eventable";
 import { event_runner } from "src/eventable/runners";
-import { Cleanup, HandlersState, RegisterOptions, empty } from "src/eventable/types";
+import { Cleanup, Events, HandlersState, RegisterOptions, empty } from "src/eventable/types";
 
-export type Emitter<EVENTS = any> = {
+type DefaultEmitter<EVENTS extends Events = Events> = {
 	emit: <TYPE extends keyof EVENTS>(
 		...params: EVENTS[TYPE] extends empty ? [type: TYPE] : [type: TYPE, args: EVENTS[TYPE]]
 	) => void;
-	register: <TYPE extends keyof EVENTS, SELECTED = EVENTS[TYPE]>(
+	listen: <TYPE extends keyof EVENTS, SELECTED = EVENTS[TYPE]>(
 		options: RegisterOptions<TYPE, void, EVENTS[TYPE], SELECTED>,
 	) => Cleanup;
 };
 
-export function emitter<EVENTS>(): Emitter<EVENTS> {
+export type Emitter<EVENTS extends Events = Events> = DefaultEmitter<EVENTS & Listening<EVENTS>>;
+
+export function emitter<EVENTS extends Events>(): Emitter<EVENTS> {
 	return eventable({
 		provider: in_memory_provider(<HandlersState<EVENTS>>{}),
 		runner: event_runner(),
