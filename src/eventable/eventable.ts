@@ -1,4 +1,4 @@
-import { Lambda, Prefix, Provider, is_string } from "@nagisham/standard";
+import { Lambda, Prefix, Provider, Task, is_string } from "@nagisham/standard";
 
 import {
 	Cleanup,
@@ -46,15 +46,17 @@ function handlers_state<STATE, API>(provider: Provider<HandlersState<STATE, API>
 	const default_type = Symbol();
 
 	return {
-		get: <TYPE extends keyof STATE>(type: TYPE | undefined) =>
-			(provider.get()[(type ?? default_type) as TYPE] ??= []),
+		get: <TYPE extends keyof STATE>(type: TYPE | undefined = default_type as TYPE) => {
+			return Task.await((state) => state[type] ?? [], provider.get());
+		},
 		set: <TYPE extends keyof STATE>(
-			type: TYPE | undefined,
+			type: TYPE | undefined = default_type as TYPE,
 			handlers: Array<(args: STATE[TYPE], api: any) => void>,
 		) => {
-			const state = provider.get();
-			state[(type ?? default_type) as TYPE] = handlers;
-			provider.set(state);
+			Task.await((state) => {
+				state[type] = handlers;
+				provider.set(state);
+			}, provider.get());
 		},
 	};
 }
