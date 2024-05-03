@@ -6,7 +6,6 @@ import {
 	HandlersState,
 	RegisterOptions,
 	RegisterTypelessOptions,
-	Type,
 	empty,
 } from "./types";
 
@@ -20,25 +19,27 @@ interface EngineConstructor {
 	}): {
 		emit: <TYPE extends keyof STATE>(
 			...params: STATE[TYPE] extends empty ? [type: TYPE] : [type: TYPE, args: STATE[TYPE]]
-		) => RETURNS[TYPE];
+		) => Task<RETURNS[TYPE]>;
 		listen: <TYPE extends keyof STATE, SELECTED = STATE[TYPE]>(
 			options: RegisterOptions<TYPE, API, STATE[TYPE], SELECTED>,
-		) => Cleanup;
+		) => Task<Cleanup>;
 	};
 	<
-		STATE extends Record<Type, any>,
+		STATE extends Record<string, any>,
 		API,
 		RETURN,
 		PARAMS extends any[],
 		TYPE extends keyof STATE = STATE extends Record<infer T, any> ? T : never,
-		ARGS = STATE extends Record<Type, infer A> ? A : never,
+		ARGS = STATE extends Record<string, infer A> ? A : never,
 	>(options: {
 		provider: Provider<HandlersState<STATE, API>>;
 		runner: (handlers: Array<(args: ARGS, api: API) => void>, ...params: PARAMS) => RETURN;
 		event: (params: PARAMS) => readonly [type: TYPE, ...params: PARAMS];
 	}): {
-		emit: (...params: PARAMS) => RETURN;
-		listen: <SELECTED = ARGS>(options: RegisterTypelessOptions<API, ARGS, SELECTED>) => Cleanup;
+		emit: (...params: PARAMS) => Task<RETURN>;
+		listen: <SELECTED = ARGS>(
+			options: RegisterTypelessOptions<API, ARGS, SELECTED>,
+		) => Task<Cleanup>;
 	};
 }
 
@@ -46,17 +47,17 @@ function handlers_state<STATE, API>(provider: Provider<HandlersState<STATE, API>
 	const default_type = Symbol();
 
 	return {
-		get: <TYPE extends keyof STATE>(type: TYPE | undefined = default_type as TYPE) => {
-			return Task.await((state) => state[type] ?? [], provider.get());
+		get: async <TYPE extends keyof STATE>(type: TYPE | undefined = default_type as TYPE) => {
+			const state = await provider.get();
+			return (state[type] ??= []);
 		},
-		set: <TYPE extends keyof STATE>(
+		set: async <TYPE extends keyof STATE>(
 			type: TYPE | undefined = default_type as TYPE,
 			handlers: Array<(args: STATE[TYPE], api: any) => void>,
 		) => {
-			Task.await((state) => {
-				state[type] = handlers;
-				provider.set(state);
-			}, provider.get());
+			const state = await provider.get();
+			state[type] = handlers;
+			provider.set(state);
 		},
 	};
 }
@@ -68,11 +69,11 @@ export type Listening<EVENTS extends Events> = {
 };
 
 export const eventable: EngineConstructor = <
-	STATE extends Record<Type, any>,
+	STATE extends Record<string, any>,
 	RETURNS extends { [KEY in keyof STATE]: any },
 	API,
 	PARAMS extends any[],
-	TYPE extends keyof STATE = STATE extends Record<infer T, any> ? T : never,
+	TYPE extends string,
 >(options: {
 	provider: Provider<HandlersState<STATE, API>>;
 	runner: <TYPE extends keyof STATE>(
@@ -84,16 +85,16 @@ export const eventable: EngineConstructor = <
 	const { runner, event } = options;
 	const { get, set } = handlers_state(options.provider);
 
-	function emit(...params: PARAMS | [type: TYPE, ...params: PARAMS]) {
+	async function emit(...params: PARAMS | [type: TYPE, ...params: PARAMS]) {
 		const [type, ...args] = event
 			? event(params as PARAMS)
 			: (params as [type: TYPE, ...params: PARAMS]);
 
-		const handlers = get(type);
+		const handlers = await get(type);
 		return runner(handlers, ...args);
 	}
 
-	function listen<TYPE extends keyof STATE, SELECTED>(
+	async function listen<TYPE extends keyof STATE, SELECTED>(
 		options: { type?: TYPE } & RegisterTypelessOptions<API, STATE[TYPE], SELECTED>,
 	) {
 		const { type = "default", patch, select, handler } = options;
@@ -114,8 +115,8 @@ export const eventable: EngineConstructor = <
 
 		Object.defineProperty(listener, "name", { value: name });
 
-		let handlers = get(type);
-		if (!handlers) set(type, (handlers = []));
+		let handlers = await get(type);
+		if (!handlers) await set(type, (handlers = []));
 
 		function listener(args: SELECTED | void, api?: API) {
 			if (select) {
@@ -136,8 +137,8 @@ export const eventable: EngineConstructor = <
 			}
 		}
 
-		function clear() {
-			if (!handlers) return;
+		async function clear() {
+			let handlers = await get(type);
 
 			const index = handlers.indexOf(listener);
 			if (index === -1) {
@@ -146,6 +147,7 @@ export const eventable: EngineConstructor = <
 			}
 
 			handlers.splice(index, 1);
+			await set(type, (handlers = []));
 		}
 
 		switch (patch?.mode) {

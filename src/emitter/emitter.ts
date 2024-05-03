@@ -1,4 +1,4 @@
-import { in_memory_provider } from "@nagisham/standard";
+import { Task, in_memory_provider } from "@nagisham/standard";
 
 import { eventable } from "src/eventable";
 import { Listening } from "src/eventable/eventable";
@@ -8,10 +8,10 @@ import { Cleanup, Events, HandlersState, RegisterOptions, empty } from "src/even
 type DefaultEmitter<EVENTS extends Events = Events> = {
 	emit: <TYPE extends keyof EVENTS>(
 		...params: EVENTS[TYPE] extends empty ? [type: TYPE] : [type: TYPE, args: EVENTS[TYPE]]
-	) => void;
+	) => Task;
 	listen: <TYPE extends keyof EVENTS, SELECTED = EVENTS[TYPE]>(
 		options: RegisterOptions<TYPE, void, EVENTS[TYPE], SELECTED>,
-	) => Cleanup;
+	) => Task<Cleanup>;
 };
 
 export type Emitter<EVENTS extends Events = Events> = DefaultEmitter<EVENTS & Listening<EVENTS>>;

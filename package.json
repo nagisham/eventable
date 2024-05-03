@@ -10,7 +10,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "link": "npm link @nagisham/standard",
+    "link": "npm install && npm link @nagisham/standard",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest watch"

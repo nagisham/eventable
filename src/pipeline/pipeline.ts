@@ -1,4 +1,4 @@
-import { in_memory_provider } from "@nagisham/standard";
+import { Task, in_memory_provider } from "@nagisham/standard";
 
 import { eventable } from "src/eventable";
 import { PipelineApi, pipeline_runner } from "src/eventable/runners";
@@ -7,10 +7,10 @@ import { Cleanup, HandlersState, RegisterTypelessOptions } from "src/eventable/t
 import { PipelineOptions } from "./types";
 
 export interface Pipeline<ARGS = any, PARAMS extends any[] = [args: ARGS], RETURN = ARGS> {
-	emit: (...params: PARAMS) => RETURN;
+	emit: (...params: PARAMS) => Task<RETURN>;
 	listen: <SELECTED = ARGS>(
 		options: RegisterTypelessOptions<PipelineApi, ARGS, SELECTED>,
-	) => Cleanup;
+	) => Task<Cleanup>;
 }
 
 export const pipeline = <ARGS, PARAMS extends any[] = [args: ARGS], RETURN = ARGS>(
