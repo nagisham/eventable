@@ -16,6 +16,7 @@
     "test:watch": "vitest watch"
   },
   "devDependencies": {
+    "@nagisham/standard": "../standard/package",
     "terser": "^5.27.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
