@@ -10,7 +10,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "install": "npm install",
+    "init": "npm install",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest watch"
