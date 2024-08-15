@@ -16,7 +16,7 @@ type DefaultEmitter<EVENTS extends Events = Events> = {
 
 export type Emitter<EVENTS extends Events = Events> = DefaultEmitter<EVENTS & Listening<EVENTS>>;
 
-export function emitter<EVENTS extends Events>(): Emitter<EVENTS> {
+export function emitter<EVENTS extends Events>() {
 	return eventable({
 		provider: in_memory_provider(<HandlersState<EVENTS>>{}),
 		runner: event_runner(),

@@ -34,7 +34,7 @@ interface EngineConstructor {
 	>(options: {
 		provider: Provider<HandlersState<STATE, API>>;
 		runner: (handlers: Array<(args: ARGS, api: API) => void>, ...params: PARAMS) => RETURN;
-		event: (params: PARAMS) => readonly [type: TYPE, ...params: PARAMS];
+		event: (params: PARAMS) => [type: TYPE, ...params: PARAMS];
 	}): {
 		emit: (...params: PARAMS) => Task<RETURN>;
 		listen: <SELECTED = ARGS>(
@@ -68,6 +68,10 @@ export type Listening<EVENTS extends Events> = {
 	[K in keyof EVENTS as Prefix<typeof LISTENING_PREFIX, EVENTS>]: (next: EVENTS[K]) => void;
 };
 
+function event_default<TYPE, PARAMS extends any[]>(params: PARAMS | [type: TYPE, ...params: PARAMS]) {
+	return params as [type: TYPE, ...params: PARAMS]
+}
+
 export const eventable: EngineConstructor = <
 	STATE extends Record<string, any>,
 	RETURNS extends { [KEY in keyof STATE]: any },
@@ -80,16 +84,13 @@ export const eventable: EngineConstructor = <
 		handlers: Array<(args1: STATE[TYPE], api: API) => void>,
 		...params: PARAMS
 	) => RETURNS[TYPE];
-	event?: (params: PARAMS) => readonly [type: TYPE, ...params: PARAMS];
+	event?: (params: PARAMS) => [type: TYPE, ...params: PARAMS];
 }) => {
-	const { runner, event } = options;
-	const { get, set } = handlers_state(options.provider);
+	const { provider, runner, event } = Object.assign({ event: event_default<TYPE, PARAMS> }, options);
+	const { get, set } = handlers_state(provider);
 
 	async function emit(...params: PARAMS | [type: TYPE, ...params: PARAMS]) {
-		const [type, ...args] = event
-			? event(params as PARAMS)
-			: (params as [type: TYPE, ...params: PARAMS]);
-
+		const [type, ...args] = event(params);
 		const handlers = await get(type);
 		return runner(handlers, ...args);
 	}

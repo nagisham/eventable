@@ -8,9 +8,7 @@ import { PipelineOptions } from "./types";
 
 export interface Pipeline<ARGS = any, PARAMS extends any[] = [args: ARGS], RETURN = ARGS> {
 	emit: (...params: PARAMS) => Task<RETURN>;
-	listen: <SELECTED = ARGS>(
-		options: RegisterTypelessOptions<PipelineApi, ARGS, SELECTED>,
-	) => Task<Cleanup>;
+	listen: <SELECTED = ARGS>(options: RegisterTypelessOptions<PipelineApi, ARGS, SELECTED>) => Task<Cleanup>;
 }
 
 export const pipeline = <ARGS, PARAMS extends any[] = [args: ARGS], RETURN = ARGS>(
